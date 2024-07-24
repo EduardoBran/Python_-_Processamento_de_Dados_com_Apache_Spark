@@ -1,1 +1,0 @@
-{"class":"org.apache.spark.ml.feature.StringIndexerModel","timestamp":1721673983992,"sparkVersion":"3.5.1","uid":"StringIndexer_1ed8faf53458","paramMap":{"outputCol":"polarity_index","inputCol":"polarity"},"defaultParamMap":{"outputCol":"StringIndexer_1ed8faf53458__output","stringOrderType":"frequencyDesc","handleInvalid":"error"}}
