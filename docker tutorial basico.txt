@@ -1,0 +1,214 @@
+
+## Verificar as Versões Instaladas
+
+docker compose version
+docker --version
+docker version
+
+
+
+
+## Iniciar Docker Desktop:
+
+systemctl --user start docker-desktop
+
+
+## Parar Docker Desktop
+
+systemctl --user stop docker-desktop
+
+
+
+
+## Iniciar um Contêiner Docker:
+
+docker run -d -p 80:80 docker/getting-started
+
+
+## Listar Contêineres em Execução
+
+docker ps
+
+
+
+## Listar Todos os Contêineres
+
+docker ps -a
+
+
+
+## Parar um Contêiner
+
+docker stop f94483d67541   (verificar id com o docker ps)
+
+
+## Remover um Contêiner:
+
+docker rm f94483d67541     (verificar id com o docker ps)
+
+
+
+
+
+## Configurar para Iniciar Automaticamente:
+
+systemctl --user enable docker-desktop
+
+
+
+
+
+
+###### Criar um Contêiner de Teste
+
+## Criar e Iniciar o Contêiner Nginx:
+
+docker run -d --name meu_teste -p 8080:80 nginx
+
+-d executa o contêiner em segundo plano.
+--name dá um nome ao contêiner.
+-p 8080:80 mapeia a porta 80 do contêiner para a porta 8080 do host.
+
+AGUARDAR 1 MINUTO
+
+
+## Verificar o Contêiner em Execução
+
+docker ps
+
+
+Acessar o Servidor Web Nginx:
+
+Abra o navegador e vá para http://localhost:8080
+Você deve ver a página de boas-vindas do Nginx, confirmando que o contêiner está funcionando.
+
+
+## Parar o Contêiner
+
+docker stop meu_teste
+
+
+## Remover o Contêiner
+
+docker rm meu_teste
+
+
+
+
+
+########## POSTGRE SQL
+
+# Verificar o status do serviço PostgreSQL:
+
+sudo systemctl status postgresql
+
+# Iniciar e habilitar o serviço PostgreSQL:
+
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Trocar para o usuário postgres e acessar o prompt:
+
+sudo -i -u postgres
+psql
+
+# Criar base de dados e usuário:
+
+CREATE DATABASE testdb;
+CREATE USER testuser WITH PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE testdb TO testuser;
+
+
+
+
+########## Verificar se há um PostgreSQL usando a porta 5432: (caso dê start pelo docker e o serviço não iniciar)
+
+# Verificar se a porta 5432 está em uso:
+
+sudo ss -tuln | grep 5432
+
+# Identificar o processo usando a porta 5432:
+
+sudo lsof -i :5432
+
+# Desativar o serviço PostgreSQL:
+
+sudo systemctl stop postgresql
+
+# Verificar novamente se a porta 5432 está livre:
+
+sudo ss -tuln | grep 5432
+
+# Iniciar o contêiner Docker: (ou re-startar pelo docker)
+
+docker run --name dsa -e POSTGRES_PASSWORD=dsa123 -p 5432:5432 -d postgres
+
+
+
+
+
+
+###### Criando um Novo Contêiner Docker com PostgreSQL
+
+Agora, criaremos um novo contêiner Docker usando uma imagem PostgreSQL.
+
+Certifique-se de que o Docker está em execução:
+
+No terminal ou prompt de comando, execute docker ps para verificar se o Docker está rodando.
+Baixe a imagem mais recente do PostgreSQL e crie um novo contêiner:
+
+docker run --name novo_dsa -e POSTGRES_PASSWORD=novasenha -p 5432:5432 -d postgres
+
+Explicação dos parâmetros:
+--name novo_dsa: Define o nome do novo contêiner.
+-e POSTGRES_PASSWORD=novasenha: Define a senha do usuário postgres.
+-p 5432:5432: Mapeia a porta 5432 do contêiner para a porta 5432 do host.
+
+Conectando ao Novo Banco de Dados no PostgreSQL
+
+Agora, vamos conectar ao novo contêiner PostgreSQL e configurar o banco de dados dbdsa novamente.
+
+Criar a conexão com o servidor PostgreSQL no novo contêiner:
+
+# Cria a conexão com o novo contêiner
+pgconn = psycopg2.connect(host = "localhost", user = "postgres", password = "novasenha")
+
+# Abre um cursor
+pgcursor = pgconn.cursor()
+
+# Define o nível de isolamento para executar queries SQL no SGBD
+pgconn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT) 
+
+# Terminar todas as conexões ativas com o banco de dados dbdsa (se houver)
+pgcursor.execute("""
+    SELECT pg_terminate_backend(pg_stat_activity.pid)
+    FROM pg_stat_activity
+    WHERE pg_stat_activity.datname = 'dbdsa'
+    AND pid <> pg_backend_pid();
+""")
+
+# Drop do banco de dados (se existir)
+pgcursor.execute('DROP DATABASE IF EXISTS dbdsa')
+
+# Cria o banco de dados no SGBD
+pgcursor.execute('CREATE DATABASE dbdsa')
+
+# Fecha a conexão
+pgconn.close()
+
+## Conectar especificamente ao banco de dados dbdsa:
+
+# Cria a conexão ao banco de dados dbdsa no novo contêiner
+pgconn = psycopg2.connect(host="localhost", port=5432, database="dbdsa", user="postgres", password="novasenha")
+
+Criando a Engine SQLAlchemy para o Novo Contêiner
+Por fim, criamos a engine SQLAlchemy para facilitar a interação com o banco de dados dbdsa.
+
+
+# Cria o engine SQLAlchemy para o novo contêiner
+engine = create_engine('postgresql+psycopg2://postgres:novasenha@localhost:5432/dbdsa')
+engine
+
+Resumo
+
+Seguindo estas etapas, você terá pausado qualquer conexão anterior, criado um novo contêiner Docker com uma nova instância do PostgreSQL, e configurado um novo banco de dados dbdsa. Agora você pode continuar a manipular e analisar dados utilizando essa nova configuração.
